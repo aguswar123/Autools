@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4f7f4">
+<script>
+(function(){var t=null,q=new URLSearchParams(location.search);
+if(q.get('embedded')==='1')document.documentElement.setAttribute('data-embedded','');
+t=q.get('theme');
+if(t!=='light'&&t!=='dark'){t=null;try{t=localStorage.getItem('theme')}catch(e){}}
+if(t!=='light'&&t!=='dark')t=matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';
+document.documentElement.setAttribute('data-theme',t)})();
+</script>
+<title>Caption Tools</title>
+<style>
+/* Chapter Splitter look: white / dark-grey, soft cards, pill buttons */
+:root{
+  color-scheme:light;
+  --bg:#fff; --ink:#1c1c1e; --mute:rgba(28,28,30,.55);
+  --card-top:rgba(0,0,0,.06); --card-bot:rgba(0,0,0,.025); --line:rgba(0,0,0,.12); --hair:rgba(0,0,0,.09);
+  --btn-fill:#1c1c1e; --btn-ink:#fff;
+  --field:rgba(0,0,0,.035); --inset:rgba(0,0,0,.035);
+  --off:rgba(120,120,128,.32); --hover:rgba(0,0,0,.09);
+  --shadow:0 6px 24px rgba(0,0,0,.08);
+  --del:#c4231a; --del-bg:rgba(255,59,48,.14); --ins:#18783f; --ins-bg:rgba(52,199,89,.2); --sty:#9a5b00; --sty-bg:rgba(255,159,10,.2);
+  --chk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E");
+  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",Roboto,system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+:root[data-theme=dark]{
+  color-scheme:dark;
+  --bg:#1c1c1e; --ink:#fff; --mute:rgba(255,255,255,.6);
+  --card-top:rgba(255,255,255,.11); --card-bot:rgba(255,255,255,.05); --line:rgba(255,255,255,.18); --hair:rgba(255,255,255,.12);
+  --btn-fill:#fff; --btn-ink:#1c1c1e;
+  --field:rgba(0,0,0,.25); --inset:rgba(0,0,0,.25);
+  --off:rgba(120,120,128,.4); --hover:rgba(255,255,255,.16);
+  --shadow:0 6px 24px rgba(0,0,0,.35);
+  --del:#ff8a80; --del-bg:rgba(255,69,58,.26); --ins:#6fe3a0; --ins-bg:rgba(48,209,88,.24); --sty:#ffd479; --sty-bg:rgba(255,159,10,.26);
+  --chk:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%231c1c1e' stroke-width='3.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E");
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%;background:var(--bg)}
+body{margin:0;color:var(--ink);background:var(--bg);font:16px/1.5 var(--sans);-webkit-font-smoothing:antialiased;min-height:100vh;
+  padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
+main{max-width:920px;margin:0 auto;padding:20px 20px 96px}
+.head{display:flex;align-items:center;gap:12px;margin:6px 0 6px}
+h1{font:700 30px/1.15 var(--sans);margin:0;flex:1}
+.sub{color:var(--mute);margin:0 0 18px;font-size:14px}
+.chip{min-height:0;padding:8px 14px;font-size:13px;font-weight:500;flex:none}
+
+/* cards */
+section{margin:0 0 14px;padding:18px;border-radius:26px;
+  background:linear-gradient(180deg,var(--card-top),var(--card-bot));border:1px solid var(--line)}
+h2{font:600 13px/1.3 var(--sans);color:var(--mute);margin:0 0 12px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+h2 small{font:400 13px var(--sans);color:var(--mute);opacity:.85}
+h3{font:600 13px/1.3 var(--sans);color:var(--mute);margin:20px 0 8px}
+h3 small{font-weight:400}
+.bar{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center;margin:12px 0}
+
+/* mode switch */
+.modes{position:sticky;top:calc(10px + env(safe-area-inset-top,0px));z-index:30;display:flex;gap:3px;padding:4px;margin:0 0 14px;border-radius:999px;
+  background:color-mix(in srgb,var(--bg) 82%,transparent);border:1px solid var(--line);
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+.modes button{flex:1;min-height:40px;padding:8px 10px;border:0;border-radius:999px;background:transparent;color:var(--ink);font-weight:500}
+.modes button.primary{background:var(--btn-fill);color:var(--btn-ink);font-weight:600}
+@media (hover:hover){.modes button:hover{background:var(--hover)}.modes button.primary:hover{background:var(--btn-fill)}}
+
+/* controls */
+button,select,input[type=number],input[type=text]{font:inherit;color:var(--ink)}
+button{min-height:46px;padding:11px 20px;border-radius:999px;cursor:pointer;font-size:15px;font-weight:600;
+  background:linear-gradient(180deg,var(--card-top),var(--card-bot));border:1px solid var(--line);transition:transform .12s,background .15s,opacity .15s}
+@media (hover:hover){button:hover{background:var(--hover)}}
+button:active{transform:scale(.97)}
+button.primary,button.primary:hover{background:var(--btn-fill);color:var(--btn-ink);border-color:transparent}
+button:disabled{opacity:.4;cursor:not-allowed;transform:none}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+select,input[type=number],input[type=text]{min-height:44px;padding:9px 14px;border-radius:16px;background:var(--field);border:1px solid var(--line)}
+select{max-width:100%;flex:1 1 220px;-webkit-appearance:none;appearance:none;padding-right:38px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%238e8e93' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1.5 1.5 6 6l4.5-4.5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center}
+textarea{width:100%;min-height:120px;padding:14px 16px;border-radius:22px;resize:vertical;color:var(--ink);
+  font:15px/1.6 var(--sans);background:var(--inset);border:1px solid var(--line)}
+textarea.mono{font:13px/1.55 var(--mono)}
+textarea::placeholder,input::placeholder{color:var(--mute)}
+textarea:focus,select:focus,input[type=number]:focus,input[type=text]:focus{outline:none;border-color:var(--ink)}
+
+/* switches (monochrome) */
+label.chk{display:inline-flex;gap:10px;align-items:center;font-size:15px;padding:2px 0}
+label.chk input[type=checkbox]{-webkit-appearance:none;appearance:none;flex:none;margin:0;width:46px;height:28px;border-radius:999px;cursor:pointer;position:relative;
+  background:var(--off);transition:background .2s}
+label.chk input[type=checkbox]::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;
+  background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.3);transition:transform .22s cubic-bezier(.3,1.3,.5,1),background .2s}
+label.chk input[type=checkbox]:checked{background:var(--btn-fill)}
+label.chk input[type=checkbox]:checked::after{transform:translateX(18px);background:var(--btn-ink)}
+label.chk input[type=checkbox]:disabled{opacity:.5}
+input[type=number]{text-align:center}
+
+.meta{color:var(--mute);font-size:13.5px}
+.badge{display:inline-block;padding:2px 11px;border-radius:999px;font-size:12.5px;font-weight:600;color:var(--mute);border:1px solid var(--line)}
+.badge.ok{color:var(--ins);background:var(--ins-bg);border-color:transparent}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13.5px;margin:6px 0 10px}
+del.d,ins.i,span.s{text-decoration:none;border-radius:6px;padding:1px 4px}
+del.d{background:var(--del-bg);color:var(--del);text-decoration:line-through}
+ins.i{background:var(--ins-bg);color:var(--ins)}
+span.s{background:var(--sty-bg);color:var(--sty)}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;font-size:14px;align-items:center}
+.stats>span:not(.meta){padding:8px 14px;border-radius:999px;border:1px solid var(--line)}
+.stats b{font:700 18px var(--sans)}
+
+/* lists */
+.rows{max-height:540px;overflow:auto;border-radius:22px;background:var(--inset);border:1px solid var(--line);overscroll-behavior:contain}
+.row{display:grid;grid-template-columns:28px 92px 1fr;gap:10px;padding:12px 14px;border-bottom:1px solid var(--hair);align-items:start}
+.row:last-child{border-bottom:0}
+.row.same{opacity:.5}
+.row .t{font:12px var(--mono);color:var(--mute);padding-top:4px;word-break:break-all}
+.row .x{font:15px/1.6 var(--sans)}
+.row input[type=checkbox]{-webkit-appearance:none;appearance:none;width:22px;height:22px;margin:3px 0 0;border-radius:50%;cursor:pointer;
+  border:1.6px solid var(--mute);background:transparent;transition:background .15s,border-color .15s}
+.row input[type=checkbox]:checked{background:var(--btn-fill) var(--chk) center/16px no-repeat;border-color:var(--btn-fill)}
+.row input[type=checkbox]:disabled{opacity:.4}
+.note{color:var(--mute);font-size:12.5px;margin-top:3px}
+.empty{padding:26px 18px;text-align:center;color:var(--mute)}
+.brow{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.4fr);gap:10px;padding:14px;border-bottom:1px solid var(--hair)}
+.brow:last-child{border-bottom:0}
+.brow .bn b{display:block;overflow-wrap:anywhere;font-weight:600}
+.brow .bn .meta{display:block}
+.brow .bs{grid-column:1/-1;font-size:13.5px;color:var(--mute)}
+.brow .bs.ok{color:var(--ins)}
+.brow .ba{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+.brow .ba button{min-height:34px;padding:5px 14px;font-size:13.5px}
+.brow select{width:100%}
+.status{font-size:13.5px;color:var(--mute)}
+.status.ok{color:var(--ins)}
+.status.warn{color:var(--sty)}
+
+/* toast */
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,12px);z-index:60;
+  padding:12px 20px;border-radius:999px;font-size:14.5px;font-weight:600;max-width:90vw;text-align:center;
+  background:var(--btn-fill);color:var(--btn-ink);box-shadow:var(--shadow);
+  opacity:0;pointer-events:none;transition:opacity .2s,transform .3s cubic-bezier(.3,1.3,.5,1)}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+
+@media (max-width:520px){
+  main{padding:16px 16px 90px}
+  h1{font-size:28px}
+  .row{grid-template-columns:24px 1fr}.row .t{grid-column:2}.row .x{grid-column:2}
+  .brow{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* section order per mode (settings sit where they are needed) */
+main{display:flex;flex-direction:column}
+main>.head{order:0}.sub{order:1}.modes{order:2}
+main>section{order:20}
+body[data-mode=single] #s-chapter{order:10}
+body[data-mode=single] #s-caps{order:11}
+body[data-mode=single] #s-settings{order:12}
+body[data-mode=single] #s-compare{order:13}
+body[data-mode=single] #s-out{order:14}
+body[data-mode=single] #s-unb{order:15}
+body[data-mode=batch] #s-batch{order:10}
+body[data-mode=batch] #s-settings{order:11}
+
+/* ===== Android shell (code 1) ===== */
+:root{--sans:Roboto,"Google Sans",system-ui,"Segoe UI",sans-serif;--bg:#f4f7f4;--ink:#171d1a;--mute:rgba(23,29,26,.62);--surf:#fff;--tonal:#d8e8df;--on-tonal:#0f2b22;--field:#edf1ed;--inset:#edf1ed;--line:rgba(23,29,26,.2);--hair:rgba(23,29,26,.08);--btn-fill:#1f6f5c;--btn-ink:#fff;--hover:rgba(31,111,92,.1);--shadow:0 2px 8px rgba(0,0,0,.2)}
+:root[data-theme=dark]{--bg:#0f1512;--ink:#e0e4df;--mute:rgba(224,228,223,.66);--surf:#18201c;--tonal:#2a3a33;--on-tonal:#d0e8dd;--field:#212b26;--inset:#212b26;--line:rgba(224,228,223,.22);--hair:rgba(224,228,223,.1);--btn-fill:#8fd5bc;--btn-ink:#00382b;--hover:rgba(143,213,188,.14)}
+body{padding-top:0;padding-bottom:0}
+main{padding:calc(72px + env(safe-area-inset-top,0px)) 16px calc(104px + env(safe-area-inset-bottom,0px))}
+section{background:var(--surf);border:0;border-radius:20px;padding:16px}
+h2{color:var(--btn-fill);font-size:14px;font-weight:500;letter-spacing:.1px}
+button{min-height:40px;padding:0 20px;border-radius:20px;background:var(--tonal);color:var(--on-tonal);border:0;font-size:14px;font-weight:500;letter-spacing:.1px}
+@media (hover:hover){button:hover{background:color-mix(in srgb,var(--tonal) 82%,var(--ink))}}
+button.primary,button.primary:hover{background:var(--btn-fill);color:var(--btn-ink)}
+button:disabled{opacity:.38}
+select,input[type=number],input[type=text]{min-height:48px;border-radius:12px}
+textarea{border-radius:16px}
+.rows{border:0;border-radius:16px;background:var(--field)}
+label.chk input[type=checkbox]{width:52px;height:32px}
+label.chk input[type=checkbox]::after{top:4px;left:4px;width:24px;height:24px;box-shadow:none}
+label.chk input[type=checkbox]:checked::after{transform:translateX(20px)}
+.appbar{position:fixed;inset:0 0 auto;z-index:40;display:flex;align-items:center;gap:4px;height:calc(64px + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) 8px 0;background:var(--bg)}
+.appbar h1{flex:1;font:400 22px/1.2 var(--sans);margin:0 0 0 8px}
+.ib,.ib:hover{width:48px;min-height:48px;height:48px;padding:0;border-radius:50%;background:transparent;color:var(--ink);display:grid;place-items:center;flex:none}
+.ib:active{background:var(--hover)}
+.ib svg{width:24px;height:24px}
+#home{max-width:920px;margin:0 auto;padding:calc(72px + env(safe-area-inset-top,0px)) 16px calc(32px + env(safe-area-inset-bottom,0px))}
+#home .lead{font:400 32px/1.2 var(--sans);margin:12px 8px 6px}
+#home .sub2{color:var(--mute);margin:0 8px 22px}
+.tool,.tool:hover{display:flex;align-items:center;gap:16px;width:100%;min-height:96px;padding:16px 20px;margin:0 0 12px;border-radius:24px;background:var(--surf);color:var(--ink);text-align:left;font-weight:400}
+.tool:active{background:var(--hover)}
+.tool .ic{flex:none;width:56px;height:56px;border-radius:18px;background:var(--tonal);color:var(--on-tonal);display:grid;place-items:center}
+.tool .ic svg{width:28px;height:28px}
+.tool .tx{flex:1;min-width:0}
+.tool b{display:block;font-size:18px;font-weight:500}
+.tool .d{display:block;color:var(--mute);font-size:14px;line-height:1.4;margin-top:2px}
+.tool .chev{color:var(--mute)}
+.tool .last{font:500 11px var(--sans);font-style:normal;margin-left:6px;padding:2px 8px;border-radius:8px;background:var(--tonal);color:var(--on-tonal);vertical-align:2px}
+.nav{position:fixed;inset:auto 0 0;z-index:40;display:flex;height:calc(80px + env(safe-area-inset-bottom,0px));padding:12px 8px env(safe-area-inset-bottom,0px);background:color-mix(in srgb,var(--tonal) 45%,var(--bg))}
+.nav button,.nav button:hover{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:0;padding:0;background:transparent;border-radius:16px;font-size:12px;color:var(--mute)}
+.nav .pill{display:grid;place-items:center;width:64px;height:32px;border-radius:16px;transition:background .2s}
+.nav svg{width:24px;height:24px}
+.nav button.on{color:var(--ink)}
+.nav button.on .pill{background:var(--tonal);color:var(--on-tonal)}
+#toast{bottom:calc(96px + env(safe-area-inset-bottom,0px));border-radius:12px;background:#2e3532;color:#eff1ee;font-weight:500}
+
+/* ===== Match + Batch (code 2) ===== */
+main{padding-bottom:calc(180px + env(safe-area-inset-bottom,0px))}
+.tabs{order:0;position:sticky;top:calc(64px + env(safe-area-inset-top,0px));z-index:30;display:flex;gap:8px;overflow-x:auto;margin:0 -16px 12px;padding:4px 16px 8px;background:var(--bg);scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button,.tabs button:hover{flex:none;min-height:36px;padding:0 14px;border-radius:8px;background:transparent;border:1px solid var(--line);color:var(--ink)}
+.tabs button.on,.tabs button.on:hover{background:var(--tonal);color:var(--on-tonal);border-color:transparent}
+.fab,.fab:hover{position:fixed;right:16px;bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:35;min-height:56px;padding:0 22px;border-radius:16px;background:var(--btn-fill);color:var(--btn-ink);box-shadow:var(--shadow);font-size:15px}
+.scrim{position:fixed;inset:0;z-index:55;background:rgba(0,0,0,.4)}
+#s-settings{position:fixed;left:0;right:0;bottom:0;z-index:60;margin:0;max-height:85vh;overflow:auto;border-radius:28px 28px 0 0;padding:12px 20px calc(20px + env(safe-area-inset-bottom,0px));box-shadow:0 -4px 24px rgba(0,0,0,.25);transform:translateY(105%);visibility:hidden;transition:transform .28s cubic-bezier(.2,0,0,1),visibility 0s .28s}
+#s-settings.open{transform:none;visibility:visible;transition:transform .28s cubic-bezier(.2,0,0,1)}
+#s-settings::before{content:"";display:block;width:32px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 14px}
+.rows{max-height:none;overflow:visible}
+.row{grid-template-columns:28px 1fr;gap:2px 12px;padding:14px 16px}
+.row input[type=checkbox]{grid-row:1/3}
+.row .t,.row .x,.row .note{grid-column:2}
+.row .t{padding:0}
+#bRows{background:transparent;border-radius:0}
+.brow{background:var(--field);border:0;border-radius:16px;margin-bottom:10px;grid-template-columns:1fr}
+.brow .bs{display:inline-block;justify-self:start;padding:3px 10px;border-radius:8px;background:var(--hover)}
+.brow .bs:empty{display:none}
+.brow .bs.ok{background:var(--ins-bg)}
+.abar{position:fixed;left:0;right:0;bottom:calc(80px + env(safe-area-inset-bottom,0px));z-index:35;margin:0;padding:10px 16px;background:var(--surf);box-shadow:0 -1px 0 var(--hair);flex-wrap:nowrap}
+.abar button{flex:1;padding:0 12px}
+#bClear,#bClear:hover{background:transparent;color:var(--btn-fill)}
+
+/* ===== Translate + polish (code 3) ===== */
+h3{color:var(--btn-fill);font-size:14px;font-weight:500}
+label.chk{min-height:48px}
+.bar{gap:8px 12px}
+.badge{border-radius:8px}
+.stats>span:not(.meta){border-radius:8px;border:0;background:var(--field)}
+#toast{transform:translate(-50%,16px);transition:opacity .2s,transform .25s cubic-bezier(.2,0,0,1)}
+#toast.on{transform:translate(-50%,0)}
+#s-translate textarea{min-height:140px}
+
+/* ===== Embedded in the AuTools app (native top bar and menu are used instead) ===== */
+:root[data-embedded] .appbar,:root[data-embedded] #home{display:none!important}
+:root[data-embedded] main{padding-top:12px}
+:root[data-embedded] .tabs{top:0}
+:root[data-embedded] #dlNote,:root[data-embedded] #tNote{display:none!important}
+</style>
+</head>
+<body>
+<header class="appbar">
+  <button id="backBtn" class="ib" type="button" aria-label="Back" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg></button>
+  <h1 id="appTitle">Caption Tools</h1>
+  <button id="setBtn" class="ib" type="button" aria-label="Match settings" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0M14 4v4M8 10v4M16 16v4"/></svg></button>
+  <button id="themeBtn" class="ib" type="button"></button>
+</header>
+<div id="home">
+  <p class="lead">What do you want to do?</p>
+  <p class="sub2">Pick a tool. You can switch tools any time.</p>
+  <button class="tool" type="button" data-m="single"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h12M16 3l4 4-4 4M17 17H5M8 13l-4 4 4 4"/></svg></span><span class="tx"><b>Match <i class="last" data-m="single" hidden>Last used</i></b><span class="d">Fix a caption file with the text of an EPUB chapter. Timestamps stay as they are.</span></span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button><button class="tool" type="button" data-m="batch"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l9 5-9 5-9-5 9-5zM3 12l9 5 9-5M3 17l9 5 9-5"/></svg></span><span class="tx"><b>Batch <i class="last" data-m="batch" hidden>Last used</i></b><span class="d">Match many caption files to their chapters, then save them all in one zip.</span></span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button><button class="tool" type="button" data-m="translate"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h9M8.5 3v2M6 5c0 4 3 7 6 8M12 5c0 4-3 7-7 8M13 21l4-10 4 10M14.5 17.5h5"/></svg></span><span class="tx"><b>Translate <i class="last" data-m="translate" hidden>Last used</i></b><span class="d">Copy caption lines for translation, paste the result back and rebuild the file.</span></span><span class="chev"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span></button>
+</div>
+<nav id="nav" class="nav" aria-label="Tools" hidden><button id="modeSingle" type="button" data-m="single"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h12M16 3l4 4-4 4M17 17H5M8 13l-4 4 4 4"/></svg></span>Match</button><button id="modeBatch" type="button" data-m="batch"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l9 5-9 5-9-5 9-5zM3 12l9 5 9-5M3 17l9 5 9-5"/></svg></span>Batch</button><button id="modeTranslate" type="button" data-m="translate"><span class="pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h9M8.5 3v2M6 5c0 4 3 7 6 8M12 5c0 4-3 7-7 8M13 21l4-10 4 10M14.5 17.5h5"/></svg></span>Translate</button></nav>
+<main id="tool" hidden>
+  <div id="tsteps" class="tabs" role="tablist" hidden><button type="button" data-t="1">1 · Copy lines</button><button type="button" data-t="2">2 · Paste</button><button type="button" data-t="3">3 · Result</button></div>
+  <div id="steps" class="tabs" role="tablist" hidden><button type="button" data-s="chapter">1 · Chapter</button><button type="button" data-s="caps">2 · Captions</button><button type="button" data-s="compare">3 · Compare</button><button type="button" data-s="out">4 · Output</button><button type="button" data-s="unb">5 · Unbreakable</button></div>
+  <section id="s-settings">
+    <h2>Match settings <small>for Single and Batch</small></h2>
+    <div class="bar">
+      <label class="chk"><input type="checkbox" id="optStrict"> Fix case &amp; punctuation too</label>
+    </div>
+    <div class="bar">
+      <label class="chk"><input type="checkbox" id="optUnl" checked> Match the text exactly (no word limit)</label>
+      <label class="chk" id="maxWrap" hidden>Max words to insert <input type="number" id="optMaxIns" value="15" min="0" max="200" style="width:76px"></label>
+    </div>
+    <div class="bar">
+      <label class="chk"><input type="checkbox" id="nmOn"> Name files after the EPUB chapter</label>
+    </div>
+    <div class="bar" id="nmSub" hidden>
+      <label class="chk"><input type="checkbox" id="nmNum"> Add chapter number (01 - …)</label>
+      <label class="chk"><input type="checkbox" id="nmDig"> Use digits for number words (Chapter One → Chapter 1)</label>
+    </div>
+    <div class="bar"><button class="primary" id="setDone" type="button">Done</button></div>
+  </section>
+
+  <section id="s-batch" hidden>
+    <h2>Batch <small id="bInfo">0 files</small></h2>
+    <div class="bar">
+      <button id="bEpub">Open EPUB</button>
+      <button id="bAdd">Add caption files</button>
+      <span class="meta" id="bEpubInfo">No EPUB loaded</span>
+      <input type="file" id="fileBatch" accept=".srt,.vtt,.lrc,text/*" multiple hidden>
+    </div>
+    <div class="bar">
+      <label class="chk"><input type="checkbox" id="bUnb"> Then join broken sentences (Unbreakable)</label>
+    </div>
+    <div class="rows" id="bRows"></div>
+    <div class="bar">
+      <button class="primary" id="bRun" disabled>Match all</button>
+      <button id="bZip" disabled>Save all (.zip)</button>
+      <button id="bClear" disabled>Clear</button>
+    </div>
+    <div class="meta">Each caption file is matched to its own chapter, with the original timestamps and file format kept. The zip keeps the real .srt / .vtt / .lrc names.</div>
+  </section>
+
+  <section id="s-translate" hidden>
+    <h2>Translate <small>no EPUB needed</small></h2>
+    <div data-t="1">
+    <div class="bar">
+      <button id="tImport">Import SRT / VTT / LRC</button>
+      <span id="tBadge"></span>
+      <input type="file" id="fileT" accept=".srt,.vtt,.lrc,text/*" hidden>
+    </div>
+    <textarea id="tCap" class="mono" placeholder="…or paste SRT, VTT or LRC here."></textarea>
+
+    <h3>1 · Copy the lines for translation</h3>
+    <div class="bar">
+      <label class="chk">Translate to
+        <select id="tLang" style="flex:0 1 190px"></select>
+      </label>
+      <input type="text" id="tLangOther" placeholder="Language name" hidden>
+      <label class="chk">Style
+        <select id="tStyle" style="flex:0 1 190px"></select>
+      </label>
+    </div>
+    <div class="bar">
+      <label class="chk"><input type="checkbox" id="tPrompt" checked> Add translation prompt</label>
+      <span class="meta" id="tCount"></span>
+    </div>
+    <textarea id="tOut1" class="mono" style="min-height:180px" placeholder="The prompt and every caption line appear here."></textarea>
+    <div class="bar">
+      <button class="primary" id="tCopy" disabled>Copy for translation</button>
+      <button id="tCopyLines" disabled>Copy lines only</button>
+    </div>
+
+    </div>
+    <div data-t="2">
+    <h3>2 · Paste the translated lines</h3>
+    <textarea id="tIn" class="mono" placeholder="Paste the translation here. Keep one line per caption, with the same numbers if you used them."></textarea>
+    <div class="bar">
+      <button class="primary" id="tBuild" disabled>Build translated captions</button>
+      <span class="status" id="tStatus"></span>
+    </div>
+
+    </div>
+    <div data-t="3">
+    <h3>3 · Translated captions <small class="meta" id="tResInfo"></small></h3>
+    <div class="bar">
+      <label class="chk"><input type="checkbox" id="tCode" checked> Add language code to the file name (episode.id.srt)</label>
+    </div>
+    <textarea id="tRes" class="mono" placeholder="The new caption file appears here, with the original timestamps."></textarea>
+    <div class="bar">
+      <button id="tResCopy" disabled>Copy</button>
+      <button id="tResSave" disabled>Save</button>
+      <span class="meta" id="tNote" hidden>Saves with “.txt” added to the name. Remove “.txt” to use it.</span>
+    </div>
+    </div>
+  </section>
+
+  <section id="s-chapter">
+    <h2>Chapter text <small id="chapInfo"></small></h2>
+    <div class="bar">
+      <button id="btnEpub">Open EPUB</button>
+      <button id="btnTxt">Load .txt</button>
+      <select id="chapSel" aria-label="Chapter" hidden></select>
+      <input type="file" id="fileEpub" accept=".epub,application/epub+zip" hidden>
+      <input type="file" id="fileTxt" accept=".txt,text/plain" hidden>
+    </div>
+    <textarea id="chapText" placeholder="Open an EPUB and pick a chapter, or paste the chapter’s plain text here."></textarea>
+  </section>
+
+  <section id="s-caps">
+    <h2>Captions <small id="capInfo"></small></h2>
+    <div class="bar">
+      <button id="btnCap">Import SRT / VTT / LRC</button>
+      <input type="file" id="fileCap" accept=".srt,.vtt,.lrc,text/*" hidden>
+      <span id="capBadge"></span>
+    </div>
+    <textarea id="capText" class="mono" placeholder="…or paste SRT, VTT or LRC here."></textarea>
+  </section>
+
+  <section id="s-compare">
+    <h2>Compare</h2>
+    <div class="legend">
+      <span><del class="d">in captions only</del></span>
+      <span><ins class="i">in chapter only</ins></span>
+      <span><span class="s">case / punctuation</span></span>
+    </div>
+    <div class="bar">
+      <label class="chk"><input type="checkbox" id="optOnly"> Only differences</label>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="rows" id="rows"><div class="empty">Add chapter text and captions to see the comparison.</div></div>
+    <div class="bar">
+      <button class="primary" id="btnMatch" disabled>Automatically Match</button>
+      <span class="meta">Untick a cue to keep its original text.</span>
+    </div>
+  </section>
+
+  <section id="s-out">
+    <h2>Corrected output <small id="outInfo"></small></h2>
+    <textarea id="outText" class="mono" placeholder="Press “Automatically Match” to build the corrected file."></textarea>
+    <div class="bar">
+      <button id="btnCopy" disabled>Copy</button>
+      <button id="btnSave" disabled>Save</button>
+      <span class="meta" id="dlNote" hidden>Saves with “.txt” added to the name (e.g. episode.srt.txt). Remove “.txt” to use it.</span>
+    </div>
+  </section>
+
+  <section id="s-unb">
+    <h2>Unbreakable text <small id="unbInfo">joins broken sentences into one cue</small></h2>
+    <div class="bar">
+      <button class="primary" id="btnUnb" disabled>Unbreakable text</button>
+      <button id="btnUTxt" disabled>Text only (no timestamps)</button>
+      <span class="meta" id="unbSrc"></span>
+    </div>
+    <textarea id="unbText" class="mono" placeholder="“Unbreakable text” rewrites the captions so no sentence is split across cues, in the same format. “Text only” gives one sentence per line with no timestamps."></textarea>
+    <div class="bar">
+      <button id="btnUCopy" disabled>Copy</button>
+      <button id="btnUSave" disabled>Save</button>
+    </div>
+  </section>
+</main>
+<div id="scrim" class="scrim" hidden></div>
+<button id="fab" class="fab" type="button" hidden></button>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+let toastT;
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2400)}
+
+/* ───────── ZIP / EPUB (no libraries) ───────── */
+async function readZip(buf){
+  const dv=new DataView(buf),u8=new Uint8Array(buf);
+  let e=u8.length-22;
+  while(e>=0&&dv.getUint32(e,true)!==0x06054b50)e--;
+  if(e<0)throw new Error('This is not a valid EPUB (zip) file.');
+  const n=dv.getUint16(e+10,true);let p=dv.getUint32(e+16,true);
+  const files={};
+  for(let i=0;i<n;i++){
+    if(dv.getUint32(p,true)!==0x02014b50)break;
+    const method=dv.getUint16(p+10,true),csize=dv.getUint32(p+20,true),nl=dv.getUint16(p+28,true),
+          el=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true),off=dv.getUint32(p+42,true);
+    files[new TextDecoder().decode(u8.subarray(p+46,p+46+nl))]={method,csize,off};
+    p+=46+nl+el+cl;
+  }
+  return {
+    has:n=>!!files[n],
+    async get(name){
+      const f=files[name];if(!f)return null;
+      const o=f.off,nl=dv.getUint16(o+26,true),el=dv.getUint16(o+28,true);
+      const data=u8.subarray(o+30+nl+el,o+30+nl+el+f.csize);
+      if(f.method===0)return data;
+      if(typeof DecompressionStream==='undefined')throw new Error('This browser cannot unzip EPUBs (no DecompressionStream).');
+      const ds=new DecompressionStream('deflate-raw');
+      return new Uint8Array(await new Response(new Blob([data]).stream().pipeThrough(ds)).arrayBuffer());
+    }
+  };
+}
+const xml=s=>new DOMParser().parseFromString(s,'application/xml');
+function resolvePath(dir,href){
+  try{href=decodeURIComponent(href)}catch(e){}
+  const out=[];
+  for(const p of (dir+href).split('/')){if(p===''||p==='.')continue;if(p==='..')out.pop();else out.push(p)}
+  return out.join('/');
+}
+const BLOCK=new Set(['P','DIV','H1','H2','H3','H4','H5','H6','LI','BLOCKQUOTE','TR','SECTION','ARTICLE','PRE','DT','DD','FIGCAPTION','TABLE','UL','OL','HR','BODY','ASIDE','HEADER','FOOTER']);
+function htmlToText(html){
+  const doc=new DOMParser().parseFromString(html,'text/html');
+  doc.querySelectorAll('script,style,rt,rp').forEach(e=>e.remove());
+  const out=[];let cur='';
+  const flush=()=>{const t=cur.replace(/\s+/g,' ').trim();if(t)out.push(t);cur=''};
+  (function walk(n){
+    if(n.nodeType===3){cur+=n.nodeValue;return}
+    if(n.nodeType!==1)return;
+    if(n.tagName==='BR'){flush();return}
+    const b=BLOCK.has(n.tagName);
+    if(b)flush();
+    for(const c of n.childNodes)walk(c);
+    if(b)flush();
+  })(doc.body||doc.documentElement);
+  flush();
+  return out.join('\n\n');
+}
+async function loadEpub(file){
+  const z=await readZip(await file.arrayBuffer());
+  const dec=async n=>{const d=await z.get(n);return d?new TextDecoder('utf-8').decode(d):null};
+  const cont=await dec('META-INF/container.xml');
+  if(!cont)throw new Error('container.xml not found.');
+  const opfPath=xml(cont).querySelector('rootfile').getAttribute('full-path');
+  const opfDir=opfPath.includes('/')?opfPath.slice(0,opfPath.lastIndexOf('/')+1):'';
+  const opf=xml(await dec(opfPath));
+  const man={};
+  opf.querySelectorAll('manifest > item').forEach(i=>man[i.getAttribute('id')]={href:i.getAttribute('href'),type:i.getAttribute('media-type')||'',props:i.getAttribute('properties')||''});
+  const titles=new Map();
+  try{
+    const navItem=Object.values(man).find(m=>/\bnav\b/.test(m.props));
+    if(navItem){
+      const np=resolvePath(opfDir,navItem.href),nd=np.includes('/')?np.slice(0,np.lastIndexOf('/')+1):'';
+      const doc=new DOMParser().parseFromString(await dec(np),'text/html');
+      doc.querySelectorAll('a[href]').forEach(a=>{const p=resolvePath(nd,a.getAttribute('href').split('#')[0]);if(p&&!titles.has(p))titles.set(p,a.textContent.replace(/\s+/g,' ').trim())});
+    }else{
+      const tocId=opf.querySelector('spine').getAttribute('toc');
+      const ncx=tocId&&man[tocId];
+      if(ncx){
+        const np=resolvePath(opfDir,ncx.href),nd=np.includes('/')?np.slice(0,np.lastIndexOf('/')+1):'';
+        xml(await dec(np)).querySelectorAll('navPoint').forEach(pt=>{
+          const lab=pt.querySelector('navLabel > text'),c=pt.querySelector('content');
+          if(lab&&c){const p=resolvePath(nd,c.getAttribute('src').split('#')[0]);if(!titles.has(p))titles.set(p,lab.textContent.replace(/\s+/g,' ').trim())}
+        });
+      }
+    }
+  }catch(e){}
+  const chapters=[];
+  for(const ref of opf.querySelectorAll('spine > itemref')){
+    const it=man[ref.getAttribute('idref')];
+    if(!it||!/html/.test(it.type))continue;
+    const path=resolvePath(opfDir,it.href);
+    const html=await dec(path);if(!html)continue;
+    const text=htmlToText(html);
+    const words=text?text.split(/\s+/).length:0;
+    const h=new DOMParser().parseFromString(html,'text/html').querySelector('h1,h2,h3');
+    const title=titles.get(path)||(h&&h.textContent.replace(/\s+/g,' ').trim())||path.split('/').pop();
+    chapters.push({title,text,words});
+  }
+  return chapters;
+}
+
+/* ───────── Caption parsing / serialising ───────── */
+const LRC_RE=/^((?:\[\d{1,3}:\d{2}(?:[.:]\d{1,3})?\])+)(.*)$/;
+function decodeEnt(s){return s.replace(/&nbsp;/g,' ').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/&amp;/g,'&')}
+function clean(s){return decodeEnt(s.replace(/<[^>]*>/g,'').replace(/\{\\[^}]*\}/g,'')).replace(/\s+/g,' ').trim()}
+function parseCaptions(raw){
+  const s=raw.replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n').replace(/\s+$/,'');
+  if(!s.trim())return null;
+  const format=/^\s*WEBVTT/.test(s)?'vtt':/-->/.test(s)?'srt':/^\s*\[\d{1,3}:\d{2}(?:[.:]\d{1,3})?\]/m.test(s)?'lrc':null;
+  if(!format)return {format:null,items:[],cues:[]};
+  const items=[],cues=[];
+  const add=(head,text)=>{const cue={head,text,plain:clean(text),use:true};cues.push(cue);items.push({cue})};
+  if(format==='lrc'){
+    for(const line of s.split('\n')){const m=line.match(LRC_RE);if(m)add(m[1],m[2]);else items.push({raw:line})}
+  }else{
+    for(const block of s.split(/\n\s*\n/)){
+      const lines=block.split('\n');
+      const ti=lines.findIndex(l=>l.includes('-->'));
+      if(ti<0||/^(NOTE|STYLE|REGION)\b/.test(lines[0]))items.push({raw:block});
+      else add(lines.slice(0,ti+1).join('\n'),lines.slice(ti+1).join('\n'));
+    }
+  }
+  return {format,items,cues};
+}
+function timeLabel(cue,fmt){
+  if(fmt==='lrc')return cue.head.replace(/\]\[/g,'] [');
+  const m=cue.head.match(/(\d[\d:.,]*)\s*-->/);return m?m[1]:'';
+}
+function serialize(cap,textOf){
+  const parts=cap.items.map(it=>{
+    if(it.raw!==undefined)return it.raw;
+    const t=textOf(it.cue);
+    if(cap.format==='lrc')return it.cue.head+t;
+    return t===''?it.cue.head:it.cue.head+'\n'+t;
+  });
+  return parts.join(cap.format==='lrc'?'\n':'\n\n')+'\n';
+}
+
+/* ───────── Tokens & alignment ───────── */
+const norm=s=>s.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^\p{L}\p{N}]+/gu,'');
+function tokenize(text){
+  return text.replace(/([—–])/g,'$1 ').split(/\s+/).filter(Boolean).map(w=>({raw:w,key:norm(w)||w}));
+}
+function findWindow(A,B){
+  const K=4;
+  if(A.length<K||B.length<K)return [0,B.length];
+  const idx=new Map();
+  for(let i=0;i+K<=B.length;i++){
+    const k=B.slice(i,i+K).join(' ');let l=idx.get(k);
+    if(!l){l=[];idx.set(k,l)}
+    if(l.length<6)l.push(i);
+  }
+  const votes=new Map(),hits=[];
+  for(let i=0;i+K<=A.length;i++){
+    const l=idx.get(A.slice(i,i+K).join(' '));if(!l)continue;
+    for(const p of l){const d=p-i,bk=Math.floor(d/64);votes.set(bk,(votes.get(bk)||0)+1);hits.push(d)}
+  }
+  if(!hits.length)return [0,B.length];
+  let best=0,bv=-1;
+  for(const [k,v] of votes){const t=v+(votes.get(k-1)||0)+(votes.get(k+1)||0);if(t>bv){bv=t;best=k}}
+  const d0=(best+.5)*64,tol=200+A.length*.1;
+  const ok=hits.filter(d=>Math.abs(d-d0)<=tol);
+  if(!ok.length)return [0,B.length];
+  const slack=Math.max(30,Math.round(A.length*.08));
+  const s=Math.max(0,Math.min(...ok)-slack),e=Math.min(B.length,Math.max(...ok)+A.length+slack);
+  return [s,e];
+}
+function lis(arr){ // arr of [ai,bi]; longest increasing in bi
+  const tails=[],prev=new Array(arr.length).fill(-1),idxs=[];
+  for(let i=0;i<arr.length;i++){
+    let lo=0,hi=tails.length;
+    while(lo<hi){const mid=(lo+hi)>>1;if(arr[tails[mid]][1]<arr[i][1])lo=mid+1;else hi=mid}
+    if(lo>0)prev[i]=tails[lo-1];
+    tails[lo]=i;
+  }
+  const out=[];let k=tails.length?tails[tails.length-1]:-1;
+  while(k>=0){out.push(arr[k]);k=prev[k]}
+  return out.reverse();
+}
+function lcsPairs(A,B,a0,a1,b0,b1,out){
+  while(a0<a1&&b0<b1&&A[a0]===B[b0]){out.push([a0,b0]);a0++;b0++}
+  const tail=[];
+  while(a0<a1&&b0<b1&&A[a1-1]===B[b1-1]){a1--;b1--;tail.push([a1,b1])}
+  const n=a1-a0,m=b1-b0;
+  if(n>0&&m>0){
+    if(n*m<=4e6){
+      const W=m+1,dp=new Uint16Array((n+1)*W);
+      for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)
+        dp[i*W+j]=A[a0+i]===B[b0+j]?dp[(i+1)*W+j+1]+1:Math.max(dp[(i+1)*W+j],dp[i*W+j+1]);
+      let i=0,j=0;
+      while(i<n&&j<m){
+        if(A[a0+i]===B[b0+j]){out.push([a0+i,b0+j]);i++;j++}
+        else if(dp[(i+1)*W+j]>=dp[i*W+j+1])i++;else j++;
+      }
+    }else{
+      const ca=new Map(),cb=new Map();
+      for(let i=a0;i<a1;i++)ca.set(A[i],(ca.get(A[i])||0)+1);
+      for(let j=b0;j<b1;j++)cb.set(B[j],(cb.get(B[j])||0)+1);
+      const posB=new Map();
+      for(let j=b0;j<b1;j++)if(cb.get(B[j])===1&&ca.get(B[j])===1)posB.set(B[j],j);
+      const cand=[];
+      for(let i=a0;i<a1;i++){const j=posB.get(A[i]);if(j!==undefined&&ca.get(A[i])===1)cand.push([i,j])}
+      const anchors=lis(cand);
+      if(anchors.length){
+        let pa=a0,pb=b0;
+        for(const [ai,bj] of anchors){lcsPairs(A,B,pa,ai,pb,bj,out);out.push([ai,bj]);pa=ai+1;pb=bj+1}
+        lcsPairs(A,B,pa,a1,pb,b1,out);
+      }
+    }
+  }
+  for(let i=tail.length-1;i>=0;i--)out.push(tail[i]);
+}
+const SENT_END=/[.!?…]["'”’)\]]*$/;
+function wdiff(a,b){
+  const n=a.length,m=b.length,W=m+1;
+  if(n*m>1e6)return [...a.map(t=>({t:'del',a:t})),...b.map(t=>({t:'ins',b:t}))];
+  const dp=new Uint16Array((n+1)*W);
+  for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)
+    dp[i*W+j]=a[i].key===b[j].key?dp[(i+1)*W+j+1]+1:Math.max(dp[(i+1)*W+j],dp[i*W+j+1]);
+  const ops=[];let i=0,j=0;
+  while(i<n||j<m){
+    if(i<n&&j<m&&a[i].key===b[j].key){ops.push({t:a[i].raw===b[j].raw?'eq':'sty',a:a[i],b:b[j]});i++;j++}
+    else if(j>=m||(i<n&&dp[(i+1)*W+j]>=dp[i*W+j+1])){ops.push({t:'del',a:a[i]});i++}
+    else{ops.push({t:'ins',b:b[j]});j++}
+  }
+  return ops;
+}
+
+/* ───────── Analysis ───────── */
+const B=[];const MAXB=Infinity;
+const S={cap:null,chapters:[],analysis:null,applied:false,result:null,handle:null,name:'captions.srt'};
+
+function analyze(){
+  S.applied=false;S.result=null;
+  const maxIns=$('optUnl').checked?Infinity:Math.max(0,parseInt($('optMaxIns').value)||0);
+  S.analysis=computeAnalysis(S.cap,$('chapText').value,maxIns);
+  renderCompare();
+}
+function computeAnalysis(cap,chText,maxIns){
+  if(!cap||!cap.cues.length||!chText.trim())return null;
+  const C=tokenize(chText);
+  const capTok=[],range=[];
+  cap.cues.forEach(c=>{c.tokens=tokenize(c.plain);range.push([capTok.length,capTok.length+c.tokens.length]);capTok.push(...c.tokens)});
+  const M=capTok.length;
+  if(!M)return null;
+  const A=capTok.map(t=>t.key),B=C.map(t=>t.key);
+  const [ws,we]=findWindow(A,B);
+  const Bw=B.slice(ws,we),pairs=[];
+  lcsPairs(A,Bw,0,M,0,Bw.length,pairs);
+
+  const outTok=new Array(M),ins=new Array(M+1).fill(null),skipped=[];
+  const cueOfTok=new Int32Array(M);
+  range.forEach(([s,e],ci)=>{for(let q=s;q<e;q++)cueOfTok[q]=ci});
+  const all=[...pairs,[M,Bw.length]];
+  let q0=0,p0=0;
+  for(let k=0;k<all.length;k++){
+    const [q1,p1]=all[k],first=k===0,last=k===all.length-1;
+    if(!last)outTok[q1]=[C[ws+p1]];
+    const a=q1-q0;let b=p1-p0,pp0=p0;
+    if(a===0){
+      if(b>0&&!first&&!last){
+        if(b>maxIns){skipped.push({cue:cueOfTok[q0],n:b})}
+        else{
+          const run=C.slice(ws+p0,ws+p1),prev=C[ws+p0-1];
+          let cut=0;
+          if(prev&&SENT_END.test(prev.raw))cut=0;
+          else{const e=run.findIndex(t=>SENT_END.test(t.raw));cut=e<0?0:e+1}
+          ins[q0]={prev:run.slice(0,cut),next:run.slice(cut)};
+        }
+      }
+    }else{
+      if(first&&b>a+3){pp0=p1-(a+3);b=a+3}
+      if(last&&b>a+3)b=a+3;
+      if(b>2*a+maxIns){
+        for(let q=q0;q<q1;q++)outTok[q]=[capTok[q]];
+        skipped.push({cue:cueOfTok[q0],n:b});
+      }else{
+        for(let r=0;r<a;r++){
+          const lo=pp0+Math.floor(r*b/a),hi=pp0+Math.floor((r+1)*b/a);
+          outTok[q0+r]=C.slice(ws+lo,ws+hi);
+        }
+      }
+    }
+    q0=q1+1;p0=p1+1;
+  }
+  const refs=range.map(([s,e],ci)=>{
+    if(s===e)return [];
+    const r=[];
+    for(let q=s;q<e;q++){
+      if(q>s&&ins[q])r.push(...ins[q].prev,...ins[q].next);
+      else if(q===s&&q>0&&ins[q])r.push(...ins[q].next);
+      r.push(...outTok[q]);
+    }
+    if(e<M&&ins[e]&&cueOfTok[e]!==ci)r.push(...ins[e].prev);
+    return r;
+  });
+  return {refs,skipped,total:M,matched:pairs.length,window:[ws,we],chWords:C.length};
+}
+
+function cueOpsFor(cap,an,ci,strict){
+  const c=cap.cues[ci],ref=an.refs[ci];
+  if(!c.tokens.length)return {ops:[],changed:false,empty:true};
+  const ops=wdiff(c.tokens,ref);
+  const changed=ops.some(o=>o.t==='del'||o.t==='ins'||(strict&&o.t==='sty'));
+  return {ops,changed};
+}
+function cueOps(ci){return cueOpsFor(S.cap,S.analysis,ci,$('optStrict').checked)}
+function opsHtml(ops,strict){
+  return ops.map(o=>{
+    if(o.t==='eq')return esc(o.a.raw);
+    if(o.t==='sty')return strict?`<span class="s" title="chapter: ${esc(o.b.raw)}">${esc(o.a.raw)}</span>`:esc(o.a.raw);
+    if(o.t==='del')return `<del class="d">${esc(o.a.raw)}</del>`;
+    return `<ins class="i">${esc(o.b.raw)}</ins>`;
+  }).join(' ');
+}
+function renderCompare(){
+  const rows=$('rows'),st=$('stats'),an=S.analysis;
+  $('btnMatch').disabled=!an;
+  $('btnUnb').disabled=$('btnUTxt').disabled=!(S.cap&&S.cap.cues.length);
+  $('unbSrc').textContent=S.cap&&S.cap.cues.length?(S.applied?'Using the corrected captions':'Using the imported captions'):'';
+  if(!an){
+    st.innerHTML='';
+    rows.innerHTML='<div class="empty">'+(S.cap&&S.cap.format===null&&$('capText').value.trim()?'That doesn’t look like SRT, VTT or LRC.':'Add chapter text and captions to see the comparison.')+'</div>';
+    return;
+  }
+  const only=$('optOnly').checked,strict=$('optStrict').checked;
+  let chg=0,html='';
+  S.cap.cues.forEach((c,i)=>{
+    const {ops,changed,empty}=cueOps(i);
+    if(changed)chg++;
+    if(only&&!changed)return;
+    const notes=an.skipped.filter(s=>s.cue===i).map(s=>`<div class="note">Chapter has ${s.n} extra words here — not added.</div>`).join('');
+    html+=`<div class="row ${changed?'':'same'}"><input type="checkbox" data-i="${i}" ${c.use?'checked':''} ${changed?'':'disabled'} aria-label="Apply to cue ${i+1}">
+      <div class="t">${esc(timeLabel(c,S.cap.format))}</div>
+      <div class="x">${empty?'<span class="meta">'+esc(c.text)+'</span>':opsHtml(ops,strict)}${notes}</div></div>`;
+  });
+  rows.innerHTML=html||'<div class="empty">No differences. The captions already match the chapter.</div>';
+  const pct=an.total?Math.round(an.matched/an.total*100):0;
+  st.innerHTML=`<span><b>${pct}%</b> words matched</span><span><b>${chg}</b> of ${S.cap.cues.length} cues differ</span><span class="meta">Chapter: ${an.chWords.toLocaleString()} words · compared ${(an.window[1]-an.window[0]).toLocaleString()}</span>`;
+}
+
+/* ───────── Match → output ───────── */
+function wrapLike(orig,words){
+  const lines=orig.split('\n');
+  if(lines.length<2||words.length<lines.length)return words.join(' ');
+  const lens=lines.map(l=>Math.max(1,l.length)),total=lens.reduce((a,b)=>a+b,0),totalChars=words.join(' ').length;
+  const out=[];let wi=0,acc=0;
+  for(let li=0;li<lines.length;li++){
+    if(li===lines.length-1){out.push(words.slice(wi).join(' '));break}
+    acc+=lens[li];const target=acc/total*totalChars;
+    let used=0,cut=wi;
+    for(let k=wi;k<words.length-(lines.length-1-li);k++){used=words.slice(0,k+1).join(' ').length;cut=k+1;if(used>=target)break}
+    if(cut<=wi)cut=wi+1;
+    out.push(words.slice(wi,cut).join(' '));wi=cut;
+  }
+  return out.join('\n');
+}
+function finalTextFor(cap,an,cue,ci,strict){
+  if(!cue.use)return cue.text;
+  const {changed}=cueOpsFor(cap,an,ci,strict);
+  const ref=an.refs[ci];
+  if(!changed||!ref.length)return cue.text;
+  let t=wrapLike(cue.text,ref.map(r=>r.raw));
+  if(cap.format==='vtt')t=t.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  return t;
+}
+function finalText(cue,ci){return finalTextFor(S.cap,S.analysis,cue,ci,$('optStrict').checked)}
+function buildOutput(){
+  const cap=S.cap,idx=new Map(cap.cues.map((c,i)=>[c,i]));
+  S.result=cap.cues.map((c,i)=>finalText(c,i));
+  $('outText').value=serialize(cap,c=>S.result[idx.get(c)]);
+  const n=S.result.filter((t,i)=>t!==cap.cues[i].text).length;
+  $('outInfo').textContent=`${cap.format.toUpperCase()} · ${n} cue${n===1?'':'s'} changed · timestamps untouched`;
+  $('btnCopy').disabled=$('btnSave').disabled=false;
+  $('btnSave').textContent='Save as '+curName();
+  $('unbSrc').textContent='Using the corrected captions';
+}
+function applyMatch(){
+  if(!S.analysis)return;
+  S.applied=true;buildOutput();
+  $('s-out').scrollIntoView({behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'auto':'smooth',block:'start'});
+}
+
+/* ───────── Unbreakable text ───────── */
+const ABBR=new Set(['mr','mrs','ms','dr','prof','st','jr','sr','vs','etc','no','mt','capt','col','gen','lt','sgt','rev','hon','fig','vol']);
+function unbreak(texts,o){
+  const out=[];let cur='',idxs=[],inQ=false,lowerNext=false;
+  for(let ix=0;ix<texts.length;ix++){
+    let t=clean(texts[ix]);
+    if(!t)continue;
+    if(lowerNext){
+      const w=t.match(/^[\p{L}][\p{L}'’]*/u);
+      if(w&&!/^I($|['’])/.test(w[0])&&!/\p{Lu}/u.test(w[0].slice(1)))t=t[0].toLowerCase()+t.slice(1);
+      lowerNext=false;
+    }
+    for(const ch of t){if(ch==='"')inQ=!inQ;else if(ch==='\u201c')inQ=true;else if(ch==='\u201d')inQ=false}
+    const cont=/[-–—]$/.test(t)&&!/^[-–—]+$/.test(t);
+    if(cont)t=t.replace(/\s*[-–—]+$/,'');
+    const ell=o.ell&&/(\.{2,}|…)["'”’)\]]*$/.test(t);
+    const lastWord=(t.replace(/["'”’)\]]+$/,'').match(/([\p{L}.]+)\.$/u)||[])[1];
+    const abbr=lastWord&&ABBR.has(lastWord.toLowerCase().replace(/\./g,''));
+    const long=cur.length>1500;
+    if(inQ&&!cont&&/\.$/.test(t)&&!/\.{2,}$/.test(t)&&!long){
+      if(o.drop){t=t.replace(/\.+$/,'');if(o.lower)lowerNext=true}
+    }
+    cur=cur?cur+' '+t:t;idxs.push(ix);
+    if(!cont&&!ell&&!abbr&&(!inQ||long)&&SENT_END.test(t)){
+      out.push({text:cur,idxs,from:idxs[0],to:idxs[idxs.length-1]});cur='';idxs=[];if(long)inQ=false;
+    }
+  }
+  if(cur)out.push({text:cur,idxs,from:idxs[0],to:idxs[idxs.length-1]});
+  return out;
+}
+function buildUnbreakCC(groups,cap){
+  cap=cap||S.cap;const byFirst=new Map(groups.map(g=>[g.from,g]));
+  const idx=new Map(cap.cues.map((c,i)=>[c,i]));
+  const items=[];let n=0;
+  for(const it of cap.items){
+    if(it.raw!==undefined){items.push(it);continue}
+    const g=byFirst.get(idx.get(it.cue));
+    if(!g)continue;
+    let head=cap.cues[g.from].head;
+    if(cap.format!=='lrc'){
+      const endTok=(cap.cues[g.to].head.match(/-->\s*(\S+)/)||[])[1];
+      if(endTok)head=head.replace(/(-->\s*)\S+/,'$1'+endTok);
+      if(cap.format==='srt'){const L=head.split('\n');if(/^\d+$/.test(L[0].trim())){L[0]=String(++n);head=L.join('\n')}}
+    }
+    let text=g.text;
+    if(cap.format==='vtt')text=text.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+    items.push({cue:{head,text}});
+  }
+  return serialize({format:cap.format,items},c=>c.text);
+}
+function runUnbreak(mode){
+  if(!S.cap)return;
+  S.unbMode=mode||S.unbMode||'cc';
+  const texts=S.applied&&S.result?S.result:S.cap.cues.map(c=>c.text);
+  const groups=unbreak(texts,{drop:true,lower:false,ell:true});
+  const cc=S.unbMode==='cc';
+  $('unbText').value=cc?buildUnbreakCC(groups):groups.map(g=>g.text).join('\n');
+  $('btnUCopy').disabled=$('btnUSave').disabled=!groups.length;
+  $('btnUSave').textContent=cc?'Save as '+curName():'Save .txt';
+  const used=S.cap.cues.filter(c=>c.plain).length;
+  $('unbInfo').textContent=cc?`${S.cap.format.toUpperCase()} · ${used} cues → ${groups.length} cues · timestamps kept`:`${groups.length} sentences`;
+  toast(`${used} captions → ${groups.length} ${cc?'cues':'sentences'}`);
+}
+
+/* ───────── File names ───────── */
+function safeName(s){return s.replace(/[\\/:*?"<>|\u0000-\u001f]/g,' ').replace(/\s+/g,' ').trim().replace(/^\.+/,'').replace(/[. ]+$/,'').slice(0,100)||'chapter'}
+const NW={zero:0,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20,thirty:30,forty:40,fourty:40,fifty:50,sixty:60,seventy:70,eighty:80,ninety:90};
+const NWRE='(?:'+Object.keys(NW).join('|')+'|hundred|thousand)';
+const NUMRUN=new RegExp('\\b'+NWRE+'(?:[\\s-]+(?:and[\\s-]+)?'+NWRE+')*\\b','gi');
+const NUMMARK=/\b(?:chapter|part|book|section|volume|vol|episode|act|track|lesson|day|week|scene|page|unit|story|tale|case|number)\s+$|\bno\.\s+$/i;
+function wordsToNumber(run){
+  let total=0,cur=0,seen=false;
+  for(const w of run.toLowerCase().split(/[\s-]+/)){
+    if(w==='and')continue;
+    if(w==='hundred'){cur=(cur||1)*100;seen=true}
+    else if(w==='thousand'){total+=(cur||1)*1000;cur=0;seen=true}
+    else if(w in NW){cur+=NW[w];seen=true}
+    else return null;
+  }
+  return seen?total+cur:null;
+}
+function numWordsToDigits(title){
+  return title.replace(NUMRUN,(m,off)=>{
+    const before=title.slice(0,off),after=title.slice(off+m.length);
+    const marked=NUMMARK.test(before);
+    const lead=/^[\s\d.\-–—:]*$/.test(before)&&(after===''||/^\s*[:.\-–—)!?,]/.test(after));
+    if(!marked&&!lead)return m;
+    const n=wordsToNumber(m);
+    return n===null?m:String(n);
+  });
+}
+function chapterFileName(orig,format,chIdx,withNum,digits){
+  const ch=S.chapters[chIdx];if(!ch)return orig;
+  const ext=(orig.match(/\.[^.]+$/)||['.'+format])[0];
+  return (withNum?String(chIdx+1).padStart(2,'0')+' - ':'')+safeName(digits?numWordsToDigits(ch.title):ch.title)+ext;
+}
+function curName(){
+  if($('nmOn').checked&&S.cap&&S.cap.format&&S.chapters.length&&!$('chapSel').hidden)
+    return chapterFileName(S.name,S.cap.format,+$('chapSel').value,$('nmNum').checked,$('nmDig').checked);
+  return S.name;
+}
+function curTxtName(){return baseName(curName())+'.txt'}
+function refreshSaveLabels(){
+  if(!$('btnSave').disabled)$('btnSave').textContent='Save as '+curName();
+  if($('unbText').value&&S.unbMode!=='txt')$('btnUSave').textContent='Save as '+curName();
+}
+
+/* ───────── Files, copy, save ───────── */
+function baseName(n){return n.replace(/\.[^.]+$/,'')}
+async function copy(text){
+  if(window.AuBridge&&AuBridge.copyText){AuBridge.copyText(text);toast('Copied');return}
+  try{await navigator.clipboard.writeText(text)}
+  catch(e){const t=document.createElement('textarea');t.value=text;document.body.appendChild(t);t.select();try{document.execCommand('copy')}catch(_){}t.remove()}
+  toast('Copied');
+}
+async function getDownloads(){
+  try{return window.claude&&claude.use?await claude.use('downloads'):null}catch(e){return null}
+}
+async function saveText(text,name,handle){
+  if(window.AuBridge&&AuBridge.saveText){AuBridge.saveText(name,text);return}
+  const dl=await getDownloads();
+  if(dl){
+    const fn=/\.(txt|md|json|csv|html)$/i.test(name)?name:name+'.txt';
+    try{await dl.save({filename:fn,data:text});toast('Saved '+fn)}
+    catch(e){if(!e||e.code!=='declined')toast('Could not save the file')}
+    return;
+  }
+  try{
+    if(handle){const w=await handle.createWritable();await w.write(text);await w.close();toast('Saved '+name);return}
+  }catch(e){}
+  if(window.showSaveFilePicker){
+    try{const h=await showSaveFilePicker({suggestedName:name});const w=await h.createWritable();await w.write(text);await w.close();toast('Saved '+h.name);return}
+    catch(e){if(e&&e.name==='AbortError')return}
+  }
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));a.download=name;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  toast('Downloaded '+name);
+}
+function setCaptions(text,name,handle){
+  $('capText').value=text;S.name=name||S.name;S.handle=handle||null;parseAndAnalyze();
+}
+let capTimer;
+function parseAndAnalyze(){
+  const cap=parseCaptions($('capText').value);
+  S.cap=cap;
+  $('btnCopy').disabled=$('btnSave').disabled=true;$('outText').value='';$('outInfo').textContent='';
+  if(cap&&cap.format){
+    if(!S.name||!/\.(srt|vtt|lrc)$/i.test(S.name)||S.name.split('.').pop().toLowerCase()!==cap.format)
+      S.name=(S.name?baseName(S.name):'captions')+'.'+cap.format;
+    $('capBadge').innerHTML=`<span class="badge ok">${cap.format.toUpperCase()}</span> <span class="meta">${esc(S.name)}</span>`;
+    $('capInfo').textContent=cap.cues.length+' cues';
+  }else{
+    $('capBadge').innerHTML=cap?'<span class="badge">Unknown format</span>':'';
+    $('capInfo').textContent='';
+  }
+  analyze();
+}
+async function pickCaptionFile(){
+  if(window.showOpenFilePicker){
+    try{
+      const [h]=await showOpenFilePicker({types:[{description:'Captions',accept:{'text/plain':['.srt','.vtt','.lrc','.txt']}}]});
+      const f=await h.getFile();setCaptions(await f.text(),f.name,h);return;
+    }catch(e){if(e&&e.name==='AbortError')return}
+  }
+  $('fileCap').click();
+}
+
+/* ───────── Wiring ───────── */
+function setChapterText(t){
+  $('chapText').value=t;
+  const w=t.trim()?t.trim().split(/\s+/).length:0;
+  $('chapInfo').textContent=w?w.toLocaleString()+' words':'';
+  analyze();
+}
+$('btnEpub').onclick=()=>$('fileEpub').click();
+$('btnTxt').onclick=()=>$('fileTxt').click();
+$('btnCap').onclick=pickCaptionFile;
+async function openEpub(f){
+  try{
+    S.chapters=await loadEpub(f);
+    S.epubName=f.name;
+    if(!S.chapters.length)throw new Error('No readable chapters found in this EPUB.');
+    const sel=$('chapSel');sel.hidden=false;
+    sel.innerHTML=S.chapters.map((c,i)=>`<option value="${i}">${String(i+1).padStart(2,'0')}  ${esc(c.title.slice(0,60))} (${c.words.toLocaleString()} words)</option>`).join('');
+    let first=S.chapters.findIndex(c=>c.words>=150);if(first<0)first=0;
+    sel.value=first;setChapterText(S.chapters[first].text);
+    B.forEach(b=>{b.out=null;b.status='';b.ch=-1;b.guess=0;guessInto(b)});
+    renderBatch();
+    toast(S.chapters.length+' chapters loaded');
+  }catch(err){toast(err.message||'Could not read this EPUB.')}
+}
+$('fileEpub').onchange=async e=>{const f=e.target.files[0];if(f)await openEpub(f);e.target.value=''};
+$('chapSel').onchange=e=>{setChapterText(S.chapters[+e.target.value].text);refreshSaveLabels()};
+['nmOn','nmNum','nmDig'].forEach(id=>$(id).onchange=refreshSaveLabels);
+$('fileTxt').onchange=async e=>{const f=e.target.files[0];if(f){S.chapters=[];$('chapSel').hidden=true;setChapterText(await f.text())}e.target.value=''};
+$('fileCap').onchange=async e=>{const f=e.target.files[0];if(f)setCaptions(await f.text(),f.name,null);e.target.value=''};
+let chapTimer;
+$('chapText').addEventListener('input',()=>{clearTimeout(chapTimer);chapTimer=setTimeout(()=>setChapterText($('chapText').value),350)});
+$('capText').addEventListener('input',()=>{S.handle=null;clearTimeout(capTimer);capTimer=setTimeout(parseAndAnalyze,350)});
+['optStrict','optOnly'].forEach(id=>$(id).onchange=()=>{if(S.analysis){renderCompare();if(S.applied)buildOutput()}});
+$('optMaxIns').onchange=analyze;
+$('optUnl').onchange=()=>{$('maxWrap').hidden=$('optUnl').checked;analyze()};
+$('rows').addEventListener('change',e=>{
+  const i=e.target.dataset&&e.target.dataset.i;if(i===undefined)return;
+  S.cap.cues[+i].use=e.target.checked;if(S.applied)buildOutput();
+});
+$('btnMatch').onclick=applyMatch;
+$('btnCopy').onclick=()=>copy($('outText').value);
+$('btnSave').onclick=()=>saveText($('outText').value,curName(),curName()===S.name?S.handle:null);
+$('btnUnb').onclick=()=>runUnbreak('cc');
+$('btnUTxt').onclick=()=>runUnbreak('txt');
+setTimeout(async()=>{if(await getDownloads()){$('dlNote').hidden=false;$('tNote').hidden=false}},600);
+$('btnUCopy').onclick=()=>copy($('unbText').value);
+$('btnUSave').onclick=()=>saveText($('unbText').value,S.unbMode==='txt'?curTxtName():curName(),null);
+
+/* ───────── Batch mode ───────── */
+const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(u8){let c=0xFFFFFFFF;for(let i=0;i<u8.length;i++)c=CRC[(c^u8[i])&255]^(c>>>8);return (c^0xFFFFFFFF)>>>0}
+function makeZip(files){
+  const enc=new TextEncoder(),parts=[],central=[];let off=0;
+  const d=new Date(),time=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1),date=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate();
+  for(const f of files){
+    const nm=enc.encode(f.name),data=enc.encode(f.text),crc=crc32(data);
+    const lh=new DataView(new ArrayBuffer(30));
+    lh.setUint32(0,0x04034b50,true);lh.setUint16(4,20,true);lh.setUint16(6,0x0800,true);lh.setUint16(10,time,true);lh.setUint16(12,date,true);
+    lh.setUint32(14,crc,true);lh.setUint32(18,data.length,true);lh.setUint32(22,data.length,true);lh.setUint16(26,nm.length,true);
+    parts.push(new Uint8Array(lh.buffer),nm,data);
+    const ch=new DataView(new ArrayBuffer(46));
+    ch.setUint32(0,0x02014b50,true);ch.setUint16(4,20,true);ch.setUint16(6,20,true);ch.setUint16(8,0x0800,true);ch.setUint16(12,time,true);ch.setUint16(14,date,true);
+    ch.setUint32(16,crc,true);ch.setUint32(20,data.length,true);ch.setUint32(24,data.length,true);ch.setUint16(28,nm.length,true);ch.setUint32(42,off,true);
+    central.push(new Uint8Array(ch.buffer),nm);
+    off+=30+nm.length+data.length;
+  }
+  let csize=0;for(const c of central)csize+=c.length;
+  const e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,csize,true);e.setUint32(16,off,true);
+  return new Blob([...parts,...central,new Uint8Array(e.buffer)],{type:'application/zip'});
+}
+async function saveBlob(blob,name){
+  if(window.AuBridge&&AuBridge.saveBase64){
+    const u=new Uint8Array(await blob.arrayBuffer());let b='';
+    for(let i=0;i<u.length;i+=0x8000)b+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));
+    AuBridge.saveBase64(name,btoa(b),blob.type||'application/octet-stream');return;
+  }
+  const dl=await getDownloads();
+  if(dl){
+    try{await dl.save({filename:name,data:blob});toast('Saved '+name)}
+    catch(e){if(!e||e.code!=='declined')toast('Could not save the file')}
+    return;
+  }
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  toast('Downloaded '+name);
+}
+function guessInto(b){
+  if(!S.chapters.length)return;
+  const toks=tokenize(b.cap.cues.map(c=>c.plain).join(' ')).map(t=>t.key);
+  const grams=[];for(let i=0;i+4<=toks.length;i+=3)grams.push(toks.slice(i,i+4).join(' '));
+  if(!grams.length)return;
+  let best=-1,bs=0;
+  S.chapters.forEach((ch,ci)=>{
+    if(!ch._g){const k=tokenize(ch.text).map(t=>t.key),s=new Set();for(let i=0;i+4<=k.length;i++)s.add(k.slice(i,i+4).join(' '));ch._g=s}
+    let n=0;for(const g of grams)if(ch._g.has(g))n++;
+    if(n>bs){bs=n;best=ci}
+  });
+  if(best>=0&&bs/grams.length>=0.15){b.ch=best;b.guess=Math.round(bs/grams.length*100)}
+}
+function batchName(b){
+  return $('nmOn').checked&&b.ch>=0?chapterFileName(b.name,b.cap.format,b.ch,$('nmNum').checked,$('nmDig').checked):b.name;
+}
+function renderBatch(){
+  const rows=$('bRows'),n=B.length;
+  $('bInfo').textContent=`${n} file${n===1?'':'s'}`;
+  $('bAdd').disabled=n>=MAXB;
+  $('bRun').disabled=!n||!S.chapters.length;
+  $('bZip').disabled=!B.some(b=>b.out);
+  $('bClear').disabled=!n;
+  $('bEpubInfo').textContent=S.chapters.length?S.chapters.length+' chapters loaded':'No EPUB loaded';
+  if(!n){rows.innerHTML='<div class="empty">Open an EPUB, then add as many caption files as you need. Each one is matched to its own chapter.</div>';return}
+  const opts='<option value="-1">Choose chapter…</option>'+S.chapters.map((c,i)=>`<option value="${i}">${i+1}. ${esc(c.title.slice(0,50))} (${c.words.toLocaleString()} words)</option>`).join('');
+  rows.innerHTML=B.map((b,i)=>{
+    const st=b.status||(b.ch>=0?(b.guess?`Chapter picked automatically (${b.guess}% overlap)`:'Ready'):(S.chapters.length?'Choose a chapter':'Open an EPUB first'));
+    return `<div class="brow">
+      <div class="bn"><b>${esc(b.name)}</b><span class="meta">${b.cap.format.toUpperCase()} · ${b.cap.cues.length} cues</span>${batchName(b)!==b.name?`<span class="meta">Saves as: ${esc(batchName(b))}</span>`:''}</div>
+      <select data-bi="${i}" aria-label="Chapter for ${esc(b.name)}">${opts.replace(`value="${b.ch}"`,`value="${b.ch}" selected`)}</select>
+      <div class="bs ${b.out?'ok':''}">${esc(st)}</div>
+      <div class="ba"><button data-act="copy" data-bi="${i}" ${b.out?'':'disabled'}>Copy</button><button data-act="save" data-bi="${i}" ${b.out?'':'disabled'}>Save</button><button data-act="open" data-bi="${i}" ${b.ch>=0?'':'disabled'}>Open in Single</button><button data-act="rm" data-bi="${i}">Remove</button></div>
+    </div>`;
+  }).join('');
+}
+async function addBatchFiles(files){
+  for(const f of files){
+    const text=await f.text(),cap=parseCaptions(text);
+    if(!cap||!cap.format||!cap.cues.length){toast(f.name+' is not SRT, VTT or LRC');continue}
+    const b={name:f.name,text,cap,ch:-1,guess:0,out:null,status:''};
+    guessInto(b);B.push(b);
+  }
+  renderBatch();
+}
+async function runBatch(){
+  const maxIns=$('optUnl').checked?Infinity:Math.max(0,parseInt($('optMaxIns').value)||0),strict=$('optStrict').checked;
+  const unb=$('bUnb').checked,uo={drop:true,lower:false,ell:true};
+  $('bRun').disabled=true;
+  for(const b of B){
+    b.out=null;
+    if(b.ch<0){b.status='Choose a chapter';renderBatch();continue}
+    b.status='Working…';renderBatch();
+    await new Promise(r=>setTimeout(r,20));
+    try{
+      const an=computeAnalysis(b.cap,S.chapters[b.ch].text,maxIns);
+      if(!an){b.status='Nothing to compare';continue}
+      b.cap.cues.forEach(c=>c.use=true);
+      const texts=b.cap.cues.map((c,i)=>finalTextFor(b.cap,an,c,i,strict));
+      const changed=texts.filter((t,i)=>t!==b.cap.cues[i].text).length;
+      let out,extra='';
+      if(unb){
+        const groups=unbreak(texts,uo),used=b.cap.cues.filter(c=>c.plain).length;
+        out=buildUnbreakCC(groups,b.cap);extra=` · ${used} → ${groups.length} cues`;
+      }else{
+        const idx=new Map(b.cap.cues.map((c,i)=>[c,i]));
+        out=serialize(b.cap,c=>texts[idx.get(c)]);
+      }
+      b.out=out;b.status=`${Math.round(an.matched/an.total*100)}% matched · ${changed} cue${changed===1?'':'s'} changed${extra}`;
+    }catch(e){b.status='Error: '+(e.message||e)}
+  }
+  renderBatch();
+  const ok=B.filter(b=>b.out).length;toast(ok+' of '+B.length+' files matched');
+}
+function uniqueName(name,used){
+  if(!used.has(name)){used.add(name);return name}
+  const m=name.match(/^(.*?)(\.[^.]*)?$/);let i=2,n;
+  do{n=m[1]+'_'+(i++)+(m[2]||'')}while(used.has(n));
+  used.add(n);return n;
+}
+let STEP='chapter';
+const NEXT={chapter:['caps','Captions'],caps:['compare','Compare'],compare:['out','Match'],out:['unb','Unbreakable text']};
+function openSheet(on){$('s-settings').classList.toggle('open',on);$('scrim').hidden=!on}
+let TSTEP='1';
+const TNEXT={'1':'Next · Paste translation','2':'Build captions'};
+function applyStep(){
+  const m=document.body.dataset.mode,single=m==='single',tr=m==='translate';
+  ['chapter','caps','compare','out','unb'].forEach(k=>$('s-'+k).hidden=!single||k!==STEP);
+  $('steps').hidden=!single;$('tsteps').hidden=!tr;
+  document.querySelectorAll('#s-translate [data-t]').forEach(d=>d.hidden=d.dataset.t!==TSTEP);
+  document.querySelectorAll('#steps button').forEach(b=>b.classList.toggle('on',b.dataset.s===STEP));
+  document.querySelectorAll('#tsteps button').forEach(b=>b.classList.toggle('on',b.dataset.t===TSTEP));
+  const n=NEXT[STEP];
+  $('fab').hidden=!(single&&n)&&!(tr&&TNEXT[TSTEP]);
+  if(single&&n)$('fab').textContent=STEP==='compare'?'Match & view output':'Next · '+n[1];
+  if(tr&&TNEXT[TSTEP])$('fab').textContent=TNEXT[TSTEP];
+  const a=document.querySelector((single?'#steps':'#tsteps')+' .on');if((single||tr)&&a)a.scrollIntoView({inline:'center',block:'nearest'});
+}
+function setStep(k){STEP=k;applyStep();scrollTo(0,0)}
+document.querySelectorAll('#steps button').forEach(b=>b.onclick=()=>setStep(b.dataset.s));
+document.querySelectorAll('#tsteps button').forEach(b=>b.onclick=()=>{TSTEP=b.dataset.t;applyStep();scrollTo(0,0)});
+$('fab').onclick=()=>{
+  if(document.body.dataset.mode==='translate'){
+    if(TSTEP==='1')TSTEP='2';
+    else{
+      if($('tBuild').disabled){toast('Paste the translated lines first');return}
+      $('tBuild').click();
+      if(!$('tRes').value.trim()){toast('Check the translated lines');return}
+      TSTEP='3';
+    }
+    applyStep();scrollTo(0,0);return;
+  }
+  if(STEP==='compare'){if($('btnMatch').disabled){toast('Add chapter text and captions first');return}$('btnMatch').click()}
+  setStep(NEXT[STEP][0]);
+};
+$('setBtn').onclick=()=>openSheet(!$('s-settings').classList.contains('open'));
+$('scrim').onclick=$('setDone').onclick=()=>openSheet(false);
+$('bRun').parentElement.classList.add('abar');
+const TOOLS={single:'Match',batch:'Batch',translate:'Translate'};
+let inTool=false;
+function showHome(){
+  inTool=false;$('home').hidden=false;$('tool').hidden=true;$('nav').hidden=true;$('backBtn').hidden=true;$('setBtn').hidden=true;$('fab').hidden=true;openSheet(false);$('appTitle').textContent='Caption Tools';
+  let l=null;try{l=localStorage.getItem('lastTool')}catch(e){}
+  document.querySelectorAll('.tool .last').forEach(e=>e.hidden=e.dataset.m!==l);
+  scrollTo(0,0);
+}
+function setMode(m){
+  $('s-batch').hidden=m!=='batch';
+  $('s-translate').hidden=m!=='translate';
+  $('s-settings').hidden=m==='translate';
+  document.body.dataset.mode=m;
+  applyStep();
+  document.querySelectorAll('#nav button').forEach(b=>{const on=b.dataset.m===m;b.classList.toggle('on',on);on?b.setAttribute('aria-current','page'):b.removeAttribute('aria-current')});
+  $('home').hidden=true;$('tool').hidden=false;$('nav').hidden=false;$('backBtn').hidden=false;$('appTitle').textContent=TOOLS[m];
+  if(!inTool){if(!document.documentElement.hasAttribute('data-embedded'))history.pushState({tool:m},'');inTool=true}
+  try{localStorage.setItem('lastTool',m)}catch(e){}
+  $('setBtn').hidden=m==='translate';openSheet(false);
+  try{window.AuBridge&&AuBridge.onMode(m)}catch(e){}
+  if(m==='batch')renderBatch();
+  scrollTo(0,0);
+}
+document.querySelectorAll('.tool').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+$('backBtn').onclick=()=>history.back();
+addEventListener('popstate',()=>{if(inTool)showHome()});
+$('modeSingle').onclick=()=>setMode('single');
+$('modeBatch').onclick=()=>setMode('batch');
+$('modeTranslate').onclick=()=>setMode('translate');
+$('bEpub').onclick=()=>$('fileEpub').click();
+$('bAdd').onclick=()=>$('fileBatch').click();
+$('fileBatch').onchange=async e=>{await addBatchFiles([...e.target.files]);e.target.value=''};
+$('bRun').onclick=runBatch;
+['nmOn','nmNum','nmDig'].forEach(id=>$(id).addEventListener('change',renderBatch));
+$('nmOn').addEventListener('change',()=>{$('nmSub').hidden=!$('nmOn').checked});
+$('bClear').onclick=()=>{B.length=0;renderBatch()};
+$('bZip').onclick=()=>{
+  const used=new Set(),files=B.filter(b=>b.out).map(b=>({name:uniqueName(batchName(b),used),text:b.out}));
+  if(!files.length)return;
+  saveBlob(makeZip(files),(S.epubName?baseName(S.epubName):'captions')+'_matched.zip');
+};
+$('bRows').addEventListener('change',e=>{
+  const i=e.target.dataset&&e.target.dataset.bi;if(i===undefined)return;
+  const b=B[+i];b.ch=+e.target.value;b.guess=0;b.out=null;b.status='';renderBatch();
+});
+$('bRows').addEventListener('click',async e=>{
+  const btn=e.target.closest('button[data-act]');if(!btn)return;
+  const b=B[+btn.dataset.bi],act=btn.dataset.act;
+  if(act==='copy')copy(b.out);
+  else if(act==='save')saveText(b.out,batchName(b),null);
+  else if(act==='rm'){B.splice(+btn.dataset.bi,1);renderBatch()}
+  else if(act==='open'){
+    setMode('single');
+    $('chapSel').value=b.ch;setChapterText(S.chapters[b.ch].text);
+    setCaptions(b.text,b.name,null);setStep('compare');
+  }
+});
+
+/* ───────── Translate mode ───────── */
+const LANGS=[['Indonesian','id'],['English','en'],['Malay','ms'],['Javanese','jv'],['Sundanese','su'],['Filipino','fil'],['Vietnamese','vi'],['Thai','th'],['Chinese (Simplified)','zh-CN'],['Chinese (Traditional)','zh-TW'],['Japanese','ja'],['Korean','ko'],['Hindi','hi'],['Arabic','ar'],['Spanish','es'],['Portuguese','pt'],['French','fr'],['German','de'],['Italian','it'],['Dutch','nl'],['Russian','ru'],['Turkish','tr'],['Polish','pl'],['Ukrainian','uk'],['Other…','']];
+const STYLES=[
+  ['Natural','natural and conversational, the way a native speaker would say it'],
+  ['Literary','literary and expressive, like well-written book prose, keeping the tone and rhythm of the original'],
+  ['Formal','formal and polite, in standard written language'],
+  ['Casual','casual everyday spoken language; contractions and light slang are fine'],
+  ['Literal','faithful and close to the original wording and sentence structure']
+];
+const T={cap:null,name:'captions.srt',cues:[],lines:[]};
+$('tLang').innerHTML=LANGS.map(([n],i)=>`<option value="${i}">${esc(n)}</option>`).join('');
+$('tStyle').innerHTML=STYLES.map(([n],i)=>`<option value="${i}">${i+1}. ${esc(n)}</option>`).join('');
+function tLangName(){
+  const [n]=LANGS[+$('tLang').value];
+  return n==='Other…'?($('tLangOther').value.trim()||'the target language'):n;
+}
+function tLangCode(){return LANGS[+$('tLang').value][1]}
+function tName(){
+  if(!$('tCode').checked)return T.name;
+  const code=tLangCode()||'translated',ext=(T.name.match(/\.[^.]+$/)||[''])[0];
+  return baseName(T.name)+'.'+code+ext;
+}
+function tBuildExtract(){
+  T.cues=[];T.lines=[];
+  if(T.cap)T.cap.cues.forEach((c,i)=>{if(c.plain){T.cues.push(i);T.lines.push(c.plain)}});
+  const num=true;
+  const body=T.lines.map((l,i)=>num?`${i+1}. ${l}`:l).join('\n');
+  let text=body;
+  if($('tPrompt').checked&&T.lines.length){
+    const [sn,sd]=STYLES[+$('tStyle').value];
+    text=`Translate the following subtitle lines into ${tLangName()}.
+Style: ${sn.toLowerCase()} — ${sd}.
+
+Rules:
+- Return exactly one translated line for each input line, in the same order.
+${num?'- Keep the line numbers exactly as given (1., 2., 3., …).\n':''}- Do not merge, split, skip or add lines.
+- Keep names consistent and do not add notes or explanations.
+- Return only the translated lines.
+
+Lines:
+${body}`;
+  }
+  $('tOut1').value=text;
+  $('tCount').textContent=T.lines.length?`${T.lines.length} lines`:'';
+  $('tCopy').disabled=$('tCopyLines').disabled=!T.lines.length;
+  $('tBuild').disabled=!T.lines.length;
+  tRefreshSave();
+}
+function tRefreshSave(){if(!$('tResSave').disabled)$('tResSave').textContent='Save as '+tName()}
+function tParseCaps(){
+  const cap=parseCaptions($('tCap').value);
+  T.cap=cap&&cap.format?cap:null;
+  if(T.cap){
+    if(!/\.(srt|vtt|lrc)$/i.test(T.name)||T.name.split('.').pop().toLowerCase()!==cap.format)
+      T.name=baseName(T.name)+'.'+cap.format;
+    $('tBadge').innerHTML=`<span class="badge ok">${cap.format.toUpperCase()}</span> <span class="meta">${esc(T.name)} · ${cap.cues.length} cues</span>`;
+  }else $('tBadge').innerHTML=cap?'<span class="badge">Unknown format</span>':'';
+  $('tRes').value='';$('tResCopy').disabled=$('tResSave').disabled=true;$('tResInfo').textContent='';$('tStatus').textContent='';
+  tBuildExtract();
+}
+function parseTranslated(text,n,numbered){
+  const lines=text.replace(/\r\n?/g,'\n').split('\n').map(l=>l.trim()).filter(l=>l&&!/^```/.test(l));
+  const out=new Array(n).fill(undefined);let ignored=0,found=0,mode='numbered';
+  const NUM=/^(?:\[(\d{1,6})\]|\(?(\d{1,6})[.):|])\s*(.*)$/;
+  if(numbered){
+    for(const l of lines){
+      const m=l.match(NUM);
+      if(m){const k=+(m[1]||m[2]);if(k>=1&&k<=n&&out[k-1]===undefined&&m[3]){out[k-1]=m[3];found++}else ignored++}
+      else ignored++;
+    }
+  }
+  if(!numbered||found===0){
+    mode='sequential';found=0;ignored=0;
+    lines.forEach((l,i)=>{if(i<n){out[i]=l;found++}else ignored++});
+  }
+  const missing=[];out.forEach((t,i)=>{if(t===undefined)missing.push(i+1)});
+  return {out,found,ignored,missing,mode};
+}
+function tBuildResult(){
+  if(!T.cap||!T.lines.length)return;
+  const txt=$('tIn').value;
+  if(!txt.trim()){toast('Paste the translated lines first');return}
+  const r=parseTranslated(txt,T.lines.length,true);
+  const trans=new Map();
+  T.cues.forEach((ci,k)=>{if(r.out[k]!==undefined)trans.set(ci,r.out[k])});
+  const idx=new Map(T.cap.cues.map((c,i)=>[c,i]));
+  $('tRes').value=serialize(T.cap,c=>{
+    const t=trans.get(idx.get(c));
+    if(t===undefined)return c.text;
+    let s=wrapLike(c.text,t.split(/\s+/).filter(Boolean));
+    if(T.cap.format==='vtt')s=s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+    return s;
+  });
+  $('tResCopy').disabled=$('tResSave').disabled=false;tRefreshSave();
+  $('tResInfo').textContent=`${T.cap.format.toUpperCase()} · timestamps untouched`;
+  const st=$('tStatus');
+  let msg=`${r.found} of ${T.lines.length} lines matched`,cls='ok';
+  if(r.missing.length){cls='warn';msg+=` · missing ${r.missing.slice(0,12).join(', ')}${r.missing.length>12?'…':''} (original text kept)`}
+  if(r.ignored)msg+=` · ${r.ignored} extra line${r.ignored===1?'':'s'} ignored`;
+  if(r.mode==='sequential')msg+=' · no numbers found, matched by order';
+  st.textContent=msg;st.className='status '+cls;
+}
+function tSetCaptions(text,name){$('tCap').value=text;T.name=name||T.name;tParseCaps()}
+let tTimer;
+$('tCap').addEventListener('input',()=>{clearTimeout(tTimer);tTimer=setTimeout(tParseCaps,350)});
+$('tImport').onclick=()=>$('fileT').click();
+$('fileT').onchange=async e=>{const f=e.target.files[0];if(f)tSetCaptions(await f.text(),f.name);e.target.value=''};
+$('tLang').value='0';
+$('tLang').onchange=()=>{$('tLangOther').hidden=LANGS[+$('tLang').value][0]!=='Other…';tBuildExtract()};
+$('tLangOther').addEventListener('input',tBuildExtract);
+['tStyle','tPrompt'].forEach(id=>$(id).onchange=tBuildExtract);
+$('tCode').onchange=tRefreshSave;
+$('tCopy').onclick=()=>copy($('tOut1').value);
+$('tCopyLines').onclick=()=>copy(T.lines.map((l,i)=>`${i+1}. ${l}`).join('\n'));
+$('tBuild').onclick=tBuildResult;
+$('tResCopy').onclick=()=>copy($('tRes').value);
+$('tResSave').onclick=()=>saveText($('tRes').value,tName(),null);
+/* ───────── Light / dark toggle ───────── */
+(function(){
+  const SUN='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',MOON='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/></svg>';
+  const root=document.documentElement,btn=$('themeBtn'),meta=document.querySelector('meta[name=theme-color]');
+  function apply(t){
+    root.setAttribute('data-theme',t);
+    btn.innerHTML=t==='dark'?SUN:MOON;
+    btn.setAttribute('aria-label',t==='dark'?'Switch to light mode':'Switch to dark mode');
+    if(meta)meta.setAttribute('content',t==='dark'?'#0f1512':'#f4f7f4');
+  }
+  apply(root.getAttribute('data-theme')||'light');
+  window.auSetTheme=apply;
+  btn.onclick=()=>{
+    const t=root.getAttribute('data-theme')==='dark'?'light':'dark';
+    apply(t);try{localStorage.setItem('theme',t)}catch(e){}
+  };
+})();
+/* ───────── AuTools app hooks ───────── */
+window.auBack=function(){if($('s-settings').classList.contains('open')){openSheet(false);return true}return false};
+window.auToggleSettings=function(){openSheet(!$('s-settings').classList.contains('open'))};
+if(document.documentElement.hasAttribute('data-embedded')){
+  const m0=new URLSearchParams(location.search).get('m');
+  setMode(TOOLS[m0]?m0:'single');
+}else showHome();
+</script>
+</body>
+</html>
